@@ -2,19 +2,11 @@ package trivia;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 // REFACTOR ME
 public class GameBetter implements IGame {
-   ArrayList players = new ArrayList();
-
-   //Should there be 12 places instead of 6?
-   int[] places = new int[6];
-
-   //Does 6 purses make sense? -> Probably is okay for when we change the max number of players to 6.
-   //We could probably put purses and inPenaltyBox into a Player class. Also store the position of the player in the Player class.
-   int[] purses = new int[6];
-   boolean[] inPenaltyBox = new boolean[6];
-
+   List<Player> players = new ArrayList();
 
    //Why a LinkedList instead of ArrayList?
    LinkedList popQuestions = new LinkedList();
@@ -22,9 +14,11 @@ public class GameBetter implements IGame {
    LinkedList sportsQuestions = new LinkedList();
    LinkedList rockQuestions = new LinkedList();
 
+   Player currentPlayer;
+
    //Maybe these two variables could be in a GameState class?
    //Does isGettingOutOfPenaltyBox even need to exist?
-   int currentPlayer = 0;
+   int currentPlayerIndex = 0;
    boolean isGettingOutOfPenaltyBox;
 
    public GameBetter() {
@@ -48,15 +42,15 @@ public class GameBetter implements IGame {
    }
 
    public boolean add(String playerName) {
-      //Can definitely put all of these things into a player class?
-      players.add(playerName);
-      places[howManyPlayers()] = 0;
-      purses[howManyPlayers()] = 0;
-      inPenaltyBox[howManyPlayers()] = false;
+      Player newPlayer = new Player(playerName, players.size() + 1);
+      if (currentPlayer == null) {
+         currentPlayer = newPlayer;
+      }
 
-      System.out.println(playerName + " was added");
-      System.out.println("They are player number " + players.size());
-      return true;
+      System.out.println(newPlayer.name + " was added");
+      System.out.println("They are player number " + newPlayer.number);
+
+      return players.add(newPlayer);
    }
 
    public int howManyPlayers() {
@@ -64,36 +58,27 @@ public class GameBetter implements IGame {
    }
 
    public void roll(int roll) {
-      System.out.println(players.get(currentPlayer) + " is the current player");
+      System.out.println(currentPlayer.name + " is the current player");
       System.out.println("They have rolled a " + roll);
 
-      if (inPenaltyBox[currentPlayer]) {
+      if (currentPlayer.inPenaltyBox) {
          if (roll % 2 != 0) { //Need to roll odd number to get out of the penalty box.
             isGettingOutOfPenaltyBox = true; //This might fit in the player class as well.
 
-            System.out.println(players.get(currentPlayer) + " is getting out of the penalty box");
-            places[currentPlayer] = places[currentPlayer] + roll;
-            if (places[currentPlayer] > 11) places[currentPlayer] = places[currentPlayer] - 12;
+            System.out.println(currentPlayer.name + " is getting out of the penalty box");
+            currentPlayer.move(roll);
 
-            System.out.println(players.get(currentPlayer)
-                               + "'s new location is "
-                               + places[currentPlayer]);
             System.out.println("The category is " + currentCategory());
             askQuestion();
          } else {
-            System.out.println(players.get(currentPlayer) + " is not getting out of the penalty box");
+            System.out.println(currentPlayer.name + " is not getting out of the penalty box");
             isGettingOutOfPenaltyBox = false;
          }
 
       } else {
 
-         //Duplicate code of above
-         places[currentPlayer] = places[currentPlayer] + roll;
-         if (places[currentPlayer] > 11) places[currentPlayer] = places[currentPlayer] - 12;
+         currentPlayer.move(roll);
 
-         System.out.println(players.get(currentPlayer)
-                            + "'s new location is "
-                            + places[currentPlayer]);
          System.out.println("The category is " + currentCategory());
          askQuestion();
       }
@@ -116,76 +101,72 @@ public class GameBetter implements IGame {
       //Maybe this could be a static map.
       //Place could be a class that stores an integer position and a Category
       //Maybe a Category class that has a String name and a List<String> questions. A Stack would actually be better than a list.
-      if (places[currentPlayer] == 0) return "Pop";
-      if (places[currentPlayer] == 4) return "Pop";
-      if (places[currentPlayer] == 8) return "Pop";
-      if (places[currentPlayer] == 1) return "Science";
-      if (places[currentPlayer] == 5) return "Science";
-      if (places[currentPlayer] == 9) return "Science";
-      if (places[currentPlayer] == 2) return "Sports";
-      if (places[currentPlayer] == 6) return "Sports";
-      if (places[currentPlayer] == 10) return "Sports";
+      if (currentPlayer.positionOnBoard == 0) return "Pop";
+      if (currentPlayer.positionOnBoard == 4) return "Pop";
+      if (currentPlayer.positionOnBoard == 8) return "Pop";
+      if (currentPlayer.positionOnBoard== 1) return "Science";
+      if (currentPlayer.positionOnBoard == 5) return "Science";
+      if (currentPlayer.positionOnBoard == 9) return "Science";
+      if (currentPlayer.positionOnBoard == 2) return "Sports";
+      if (currentPlayer.positionOnBoard == 6) return "Sports";
+      if (currentPlayer.positionOnBoard == 10) return "Sports";
       return "Rock";
    }
 
    //Move a player and check if they won the game.
    //The boolean that is returned indicates if the current player has won the game.
-   public boolean wasCorrectlyAnswered() {
-      if (inPenaltyBox[currentPlayer]) {
+   public boolean handleCorrectAnswer() {
+      if (currentPlayer.inPenaltyBox) {
          if (isGettingOutOfPenaltyBox) {
-            System.out.println("Answer was correct!!!!");
-            purses[currentPlayer]++;
-            System.out.println(players.get(currentPlayer)
-                               + " now has "
-                               + purses[currentPlayer]
-                               + " Gold Coins.");
+            currentPlayer.inPenaltyBox = false;
+            rewardCurrentPlayerCoin();
 
-            boolean winner = didPlayerWin();
-            currentPlayer++;
-            if (currentPlayer == players.size()) currentPlayer = 0;
+            boolean notAWinner = !didPlayerWin();
+            moveToNextPlayer();
 
-            return winner;
+            return notAWinner;
          } else {
-            currentPlayer++;
-            if (currentPlayer == players.size()) currentPlayer = 0;
-            return true; //Probably don't mean to always return true.
+            moveToNextPlayer();
+            return true;
          }
 
-
       } else {
+         rewardCurrentPlayerCoin();
 
-         //This is duplicate of the code above.
-         System.out.println("Answer was corrent!!!!");
-         purses[currentPlayer]++;
-         System.out.println(players.get(currentPlayer)
-                            + " now has "
-                            + purses[currentPlayer]
-                            + " Gold Coins.");
+         boolean notAWinner = !didPlayerWin();
+         moveToNextPlayer();
 
-         boolean winner = didPlayerWin();
-         currentPlayer++;
-         if (currentPlayer == players.size()) currentPlayer = 0;
-
-         return winner;
+         return notAWinner;
       }
    }
 
-   //The return value of this method means nothing as it is right now.
-   public boolean wrongAnswer() {
-      System.out.println("Question was incorrectly answered");
-      System.out.println(players.get(currentPlayer) + " was sent to the penalty box");
-      inPenaltyBox[currentPlayer] = true;
+   private void rewardCurrentPlayerCoin() {
+      currentPlayer.numCoins++;
+      System.out.println("Answer was correct!!!!");
+      System.out.println(currentPlayer.name
+                         + " now has "
+                         + currentPlayer.numCoins
+                         + " Gold Coins.");
+   }
 
-      //These lines to increment the currentPlayer are duplicates of other code in this file.
-      currentPlayer++;
-      if (currentPlayer == players.size()) currentPlayer = 0;
+   private void moveToNextPlayer() {
+      if (currentPlayer.number == players.size()) {
+         currentPlayer = players.get(0);
+      } else {
+         currentPlayer = players.get(currentPlayer.number);
+      }
+   }
+
+   public boolean handleWrongAnswer() {
+      System.out.println("Question was incorrectly answered");
+      System.out.println(currentPlayer.name + " was sent to the penalty box");
+      currentPlayer.inPenaltyBox = true;
+
+      moveToNextPlayer();
       return true;
    }
 
-   //This says that you win if you don't have six coins. That doesn't seem right.
-   //Think we can just get rid of the '!' in this logic.
-   //Which would mean the current player wins if they get to 6 coins.
    private boolean didPlayerWin() {
-      return !(purses[currentPlayer] == 6);
+      return currentPlayer.numCoins == 6;
    }
 }

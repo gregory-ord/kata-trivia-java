@@ -25,6 +25,8 @@ public class GameTest {
 			System.out.println(expectedOutput);
 		}
 		String actualOutput = extractOutput(new Random(seed), new GameBetter());
+		System.out.println("---------------Actual output-----------");
+		System.out.println(actualOutput);
 		assertEquals("Change detected for seed " + seed +
 						 ". To breakpoint through it, run this seed alone using the (ignored) test below",
 			expectedOutput, actualOutput);
@@ -51,9 +53,9 @@ public class GameTest {
 				aGame.roll(rand.nextInt(5) + 1);
 
 				if (rand.nextInt(9) == 7) {
-					notAWinner = aGame.wrongAnswer();
+					notAWinner = aGame.handleWrongAnswer();
 				} else {
-					notAWinner = aGame.wasCorrectlyAnswered();
+					notAWinner = aGame.handleCorrectAnswer();
 				}
 
 			} while (notAWinner);
