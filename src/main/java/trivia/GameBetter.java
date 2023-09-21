@@ -10,8 +10,8 @@ public class GameBetter implements IGame {
 
    List<Category> categories = new ArrayList<>();
 
-
    Player currentPlayer;
+
 
    public GameBetter() {
       Category popCategory = new Category( Category.CategoryName.POP );
@@ -59,24 +59,16 @@ public class GameBetter implements IGame {
       System.out.println("They have rolled a " + roll);
 
       if (currentPlayer.inPenaltyBox) {
-         if (roll % 2 != 0) {
+         if ( rollIsOdd(roll)) {
             currentPlayer.inPenaltyBox = false;
-
             System.out.println(currentPlayer.name + " is getting out of the penalty box");
-            currentPlayer.move(roll);
-
-            System.out.println("The category is " + currentCategory().name.desc);
-            askQuestion();
+            moveAndAskQuestion( roll );
          } else {
             System.out.println(currentPlayer.name + " is not getting out of the penalty box");
          }
 
       } else {
-
-         currentPlayer.move(roll);
-
-         System.out.println("The category is " + currentCategory().name.desc);
-         askQuestion();
+         moveAndAskQuestion( roll );
       }
    }
 
@@ -98,6 +90,17 @@ public class GameBetter implements IGame {
 
       moveToNextPlayer();
       return true;
+   }
+
+   private boolean rollIsOdd(int roll){
+      return roll % 2 != 0;
+   }
+
+   private void moveAndAskQuestion( int roll ) {
+      currentPlayer.move( roll );
+
+      System.out.println("The category is " + currentCategory().name.desc);
+      askQuestion();
    }
 
    private void askQuestion() {
