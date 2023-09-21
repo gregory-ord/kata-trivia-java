@@ -1,34 +1,44 @@
 package trivia;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 // REFACTOR ME
 public class GameBetter implements IGame {
    List<Player> players = new ArrayList();
 
-   //Why a LinkedList instead of ArrayList?
-   LinkedList popQuestions = new LinkedList();
-   LinkedList scienceQuestions = new LinkedList();
-   LinkedList sportsQuestions = new LinkedList();
-   LinkedList rockQuestions = new LinkedList();
+   List<BoardPosition> boardPositions = new ArrayList<>();
+
+   List<Category> categories = new ArrayList<>();
+
 
    Player currentPlayer;
 
    public GameBetter() {
-      for (int i = 0; i < 50; i++) {
-         //Why use a method for rock questions but not the others?
-         popQuestions.addLast("Pop Question " + i);
-         scienceQuestions.addLast(("Science Question " + i));
-         sportsQuestions.addLast(("Sports Question " + i));
-         rockQuestions.addLast(createRockQuestion(i));
+      Category popCategory = new Category( Category.CategoryName.POP );
+      Category scienceCategory = new Category( Category.CategoryName.SCIENCE );
+      Category sportsCategory = new Category( Category.CategoryName.SPORTS );
+      Category rockCategory = new Category( Category.CategoryName.ROCK );
+
+      for (int i = 49; i >= 0; i--) {
+         popCategory.addQuestion(i);
+         scienceCategory.addQuestion(i);
+         sportsCategory.addQuestion(i);
+         rockCategory.addQuestion(i);
       }
+
+      for(int i = 0; i < 12; i+=4){
+         boardPositions.add( new BoardPosition( i, popCategory.name ) );
+         boardPositions.add( new BoardPosition( i+1, scienceCategory.name ) );
+         boardPositions.add( new BoardPosition( i+2, sportsCategory.name ) );
+         boardPositions.add( new BoardPosition( i+3, rockCategory.name ) );
+      }
+
+      categories.add(popCategory);
+      categories.add(scienceCategory);
+      categories.add(sportsCategory);
+      categories.add(rockCategory);
    }
 
-   private String createRockQuestion(int index) {
-      return "Rock Question " + index;
-   }
 
    @Override
    public boolean add(String playerName) {
@@ -55,7 +65,7 @@ public class GameBetter implements IGame {
             System.out.println(currentPlayer.name + " is getting out of the penalty box");
             currentPlayer.move(roll);
 
-            System.out.println("The category is " + currentCategory());
+            System.out.println("The category is " + currentCategory().name.desc);
             askQuestion();
          } else {
             System.out.println(currentPlayer.name + " is not getting out of the penalty box");
@@ -65,7 +75,7 @@ public class GameBetter implements IGame {
 
          currentPlayer.move(roll);
 
-         System.out.println("The category is " + currentCategory());
+         System.out.println("The category is " + currentCategory().name.desc);
          askQuestion();
       }
    }
@@ -91,31 +101,27 @@ public class GameBetter implements IGame {
    }
 
    private void askQuestion() {
-      if (currentCategory() == "Pop")
-         System.out.println(popQuestions.removeFirst());
-      if (currentCategory() == "Science")
-         System.out.println(scienceQuestions.removeFirst());
-      if (currentCategory() == "Sports")
-         System.out.println(sportsQuestions.removeFirst());
-      if (currentCategory() == "Rock")
-         System.out.println(rockQuestions.removeFirst());
+      Category.CategoryName categoryName = currentCategory().name;
+      Optional<Category> categoryOpt = categories.stream().filter( c -> c.name.equals( categoryName ) ).findFirst();
+
+      if(categoryOpt.isEmpty()){
+         throw new IllegalArgumentException("Invalid category name");
+      }
+
+      System.out.println(categoryOpt.get().getNextQuestion());
    }
 
 
-   private String currentCategory() {
-      //Maybe this could be a static map.
-      //Place could be a class that stores an integer position and a Category
-      //Maybe a Category class that has a String name and a List<String> questions. A Stack would actually be better than a list.
-      if (currentPlayer.positionOnBoard == 0) return "Pop";
-      if (currentPlayer.positionOnBoard == 4) return "Pop";
-      if (currentPlayer.positionOnBoard == 8) return "Pop";
-      if (currentPlayer.positionOnBoard== 1) return "Science";
-      if (currentPlayer.positionOnBoard == 5) return "Science";
-      if (currentPlayer.positionOnBoard == 9) return "Science";
-      if (currentPlayer.positionOnBoard == 2) return "Sports";
-      if (currentPlayer.positionOnBoard == 6) return "Sports";
-      if (currentPlayer.positionOnBoard == 10) return "Sports";
-      return "Rock";
+   private Category currentCategory() {
+      BoardPosition currentPlayerBoardPosition = boardPositions.get( currentPlayer.positionOnBoard );
+      Category.CategoryName categoryName = currentPlayerBoardPosition.categoryName;
+      Optional<Category> categoryOpt = categories.stream().filter( c -> c.name.equals( categoryName ) ).findFirst();
+
+      if(categoryOpt.isEmpty()){
+         throw new IllegalArgumentException("Invalid category name");
+      }
+
+      return categoryOpt.get();
    }
 
    private boolean rewardAndMoveToNextPlayer() {
