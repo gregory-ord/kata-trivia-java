@@ -26,16 +26,11 @@ public class GameBetter implements IGame {
       }
    }
 
-   public String createRockQuestion(int index) {
+   private String createRockQuestion(int index) {
       return "Rock Question " + index;
    }
 
-   //This method is not used.
-   //Seems like it might be related to how many players you enter as in input at the start.
-   public boolean isPlayable() {
-      return (howManyPlayers() >= 2);
-   }
-
+   @Override
    public boolean add(String playerName) {
       Player newPlayer = new Player(playerName, players.size() + 1);
       if (currentPlayer == null) {
@@ -48,10 +43,7 @@ public class GameBetter implements IGame {
       return players.add(newPlayer);
    }
 
-   public int howManyPlayers() {
-      return players.size();
-   }
-
+   @Override
    public void roll(int roll) {
       System.out.println(currentPlayer.name + " is the current player");
       System.out.println("They have rolled a " + roll);
@@ -76,7 +68,26 @@ public class GameBetter implements IGame {
          System.out.println("The category is " + currentCategory());
          askQuestion();
       }
+   }
 
+   @Override
+   public boolean handleCorrectAnswer() {
+      if (currentPlayer.inPenaltyBox) {
+         moveToNextPlayer();
+         return true;
+      } else {
+         return rewardAndMoveToNextPlayer();
+      }
+   }
+
+   @Override
+   public boolean handleWrongAnswer() {
+      System.out.println("Question was incorrectly answered");
+      System.out.println(currentPlayer.name + " was sent to the penalty box");
+      currentPlayer.inPenaltyBox = true;
+
+      moveToNextPlayer();
+      return true;
    }
 
    private void askQuestion() {
@@ -107,21 +118,10 @@ public class GameBetter implements IGame {
       return "Rock";
    }
 
-   //Move a player and check if they won the game.
-   //The boolean that is returned indicates if the current player has won the game.
-   public boolean handleCorrectAnswer() {
-      if (currentPlayer.inPenaltyBox) {
-         moveToNextPlayer();
-         return true;
-      } else {
-         return rewardAndMoveToNextPlayer();
-      }
-   }
-
    private boolean rewardAndMoveToNextPlayer() {
       rewardCurrentPlayerCoin();
 
-      boolean notAWinner = !didPlayerWin();
+      boolean notAWinner = currentPlayer.numCoins != 6;
       moveToNextPlayer();
 
       return notAWinner;
@@ -142,18 +142,5 @@ public class GameBetter implements IGame {
       } else {
          currentPlayer = players.get(currentPlayer.number);
       }
-   }
-
-   public boolean handleWrongAnswer() {
-      System.out.println("Question was incorrectly answered");
-      System.out.println(currentPlayer.name + " was sent to the penalty box");
-      currentPlayer.inPenaltyBox = true;
-
-      moveToNextPlayer();
-      return true;
-   }
-
-   private boolean didPlayerWin() {
-      return currentPlayer.numCoins == 6;
    }
 }
