@@ -16,11 +16,6 @@ public class GameBetter implements IGame {
 
    Player currentPlayer;
 
-   //Maybe these two variables could be in a GameState class?
-   //Does isGettingOutOfPenaltyBox even need to exist?
-   int currentPlayerIndex = 0;
-   boolean isGettingOutOfPenaltyBox;
-
    public GameBetter() {
       for (int i = 0; i < 50; i++) {
          //Why use a method for rock questions but not the others?
@@ -62,8 +57,8 @@ public class GameBetter implements IGame {
       System.out.println("They have rolled a " + roll);
 
       if (currentPlayer.inPenaltyBox) {
-         if (roll % 2 != 0) { //Need to roll odd number to get out of the penalty box.
-            isGettingOutOfPenaltyBox = true; //This might fit in the player class as well.
+         if (roll % 2 != 0) {
+            currentPlayer.inPenaltyBox = false;
 
             System.out.println(currentPlayer.name + " is getting out of the penalty box");
             currentPlayer.move(roll);
@@ -72,7 +67,6 @@ public class GameBetter implements IGame {
             askQuestion();
          } else {
             System.out.println(currentPlayer.name + " is not getting out of the penalty box");
-            isGettingOutOfPenaltyBox = false;
          }
 
       } else {
@@ -117,27 +111,20 @@ public class GameBetter implements IGame {
    //The boolean that is returned indicates if the current player has won the game.
    public boolean handleCorrectAnswer() {
       if (currentPlayer.inPenaltyBox) {
-         if (isGettingOutOfPenaltyBox) {
-            currentPlayer.inPenaltyBox = false;
-            rewardCurrentPlayerCoin();
-
-            boolean notAWinner = !didPlayerWin();
-            moveToNextPlayer();
-
-            return notAWinner;
-         } else {
-            moveToNextPlayer();
-            return true;
-         }
-
-      } else {
-         rewardCurrentPlayerCoin();
-
-         boolean notAWinner = !didPlayerWin();
          moveToNextPlayer();
-
-         return notAWinner;
+         return true;
+      } else {
+         return rewardAndMoveToNextPlayer();
       }
+   }
+
+   private boolean rewardAndMoveToNextPlayer() {
+      rewardCurrentPlayerCoin();
+
+      boolean notAWinner = !didPlayerWin();
+      moveToNextPlayer();
+
+      return notAWinner;
    }
 
    private void rewardCurrentPlayerCoin() {
